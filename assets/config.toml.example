@@ -1,0 +1,8 @@
+# Contents of /ghostty-rpc/ghostty-rpc/assets/config.toml.example
+
+[general]
+refresh_interval = 5
+show_directory = true
+exclude = ["ls", "cd", "clear"]
+large_image = "ghostty_logo"
+small_image = "arch_linux"

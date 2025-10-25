@@ -1,0 +1,10 @@
+[Unit]
+Description=Ghostty RPC Discord Presence
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/ghostty-rpc --debug
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
