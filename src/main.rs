@@ -6,6 +6,10 @@ use log::{error, info};
 use std::path::PathBuf;
 use std::thread;
 use std::time::Duration;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
+use signal_hook::consts::signal::*;
+use signal_hook::flag;
 
 mod config;
 mod discord;
@@ -65,6 +69,20 @@ fn main() {
     // Initialize Discord RPC
     let mut discord_rpc = discord::DiscordRpc::new(&config);
 
+    // Register signal handlers so the process exits when the terminal/session closes
+    // (SIGHUP) or when SIGTERM/SIGINT are received. This ensures the binary doesn't
+    // keep running detached after the terminal is closed.
+    let term = Arc::new(AtomicBool::new(false));
+    if let Err(e) = flag::register(SIGTERM, Arc::clone(&term)) {
+        error!("Failed to register SIGTERM handler: {}", e);
+    }
+    if let Err(e) = flag::register(SIGINT, Arc::clone(&term)) {
+        error!("Failed to register SIGINT handler: {}", e);
+    }
+    if let Err(e) = flag::register(SIGHUP, Arc::clone(&term)) {
+        error!("Failed to register SIGHUP handler: {}", e);
+    }
+
     // Daemon loop
     let interval = matches
         .get_one::<String>("interval")
@@ -84,12 +102,24 @@ fn main() {
         // Log the update
         info!("Updated Discord presence: Command: '{}', CWD: '{}'", last_command, cwd);
 
+        // Exit if we received a termination signal (terminal closed, killed, etc.).
+        if term.load(Ordering::Relaxed) {
+            info!("Termination signal received, exiting");
+            break;
+        }
+
         // Check if running once
         if matches.get_flag("once") {
             break;
         }
 
-        // Sleep for the specified interval
-        thread::sleep(Duration::from_secs(interval));
+        // Sleep for the specified interval, but wake up every second to check for
+        // termination signals so we exit promptly when the terminal closes.
+        for _ in 0..interval {
+            if term.load(Ordering::Relaxed) {
+                break;
+            }
+            thread::sleep(Duration::from_secs(1));
+        }
     }
 }

@@ -14,8 +14,13 @@ pub struct DiscordRpc {
 impl DiscordRpc {
     /// Creates a new instance of DiscordRpc.
     pub fn new(config: &Config) -> Self {
-        // Replace with your actual Discord App ID
-        let client = Client::new(1234567890123456789);
+    // Replace with your actual Discord App ID
+    let mut client = Client::new(1429846275737518222);
+    // Start the client connection so `set_activity` can be used.
+    // Different versions of the `discord-presence` crate have differing
+    // signatures for `start()` (some return `()` while others return a
+    // `Result`). Discard the return value to be compatible with both.
+    let _ = client.start();
         Self {
             client,
             large_image: config.general.large_image.clone(),
