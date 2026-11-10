@@ -51,7 +51,7 @@ fn spawn_watchdog(heartbeat: Arc<AtomicU64>) {
 fn main() {
     // Set up command-line interface
     let matches = Command::new("Ghostty RPC")
-        .version("1.1.0")
+        .version(env!("CARGO_PKG_VERSION"))
         .about("Updates Discord Rich Presence with Ghostty terminal activity & Git status")
         .arg(
             Arg::new("config")
